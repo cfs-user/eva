@@ -700,7 +700,7 @@ def setup_eva_script():
     try:
         if not eva_dir.exists():
             eva_dir.parent.mkdir(parents=True, exist_ok=True)
-            eva_dir.write_text(f"#!/bin/bash\npython3 {this_file} \"$@\"\n")
+            eva_dir.write_text(f"#!/bin/bash\n{sys.executable} {this_file} \"$@\"\n")
             os.chmod(eva_dir, 0o755)
             print(f"> 已创建启动脚本：{eva_dir}")
 
@@ -753,7 +753,7 @@ def main():
     print("=" * 80)
     logo = f"EVA ({EVA_MODEL_NAME}-{TOKEN_CAP//1000}k)"
     print(" " * ((78-len(logo))//2), logo, "\n")
-    print("> 命令模式：允许所有命令无需确认！" if ALLOW_ALL_CLI else "> 命令模式：只允许读")
+    print("> 命令模式：所有命令【无需确认】，直接执行！！" if ALLOW_ALL_CLI else "> 命令模式：默认执行【只读】命令，其他命令需要人工确认")
     print("=" * 80)
 
     # 自动加载 session（基于当前工作目录）
