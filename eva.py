@@ -22,9 +22,10 @@ if not EVA_API_KEY:
     print("错误：未设置 EVA_API_KEY 环境变量")
     sys.exit(1)
 
+COMMON_HEADER = {"User-Agent": "EVA", "Authorization": f"Bearer {EVA_API_KEY}"}
 def detect_model_len():
     url = f"{EVA_BASE_URL}/models"
-    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {EVA_API_KEY}"})
+    req = urllib.request.Request(url, headers=COMMON_HEADER)
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
             status = resp.status
@@ -352,7 +353,7 @@ def llm_chat(messages, tools=None, temperature=0.6, thinking=True):
     body = json.dumps(data).encode('utf-8')
     req = urllib.request.Request(
         url, data=body,
-        headers={"Authorization": f"Bearer {EVA_API_KEY}", "Content-Type": "application/json"}
+        headers={**COMMON_HEADER, "Content-Type": "application/json"}
     )
     try:
         with urllib.request.urlopen(req) as resp:
@@ -373,7 +374,7 @@ def llm_chat_stream(messages, tools=None, temperature=0.6, thinking=True):
     body = json.dumps(data).encode('utf-8')
     req = urllib.request.Request(
         url, data=body,
-        headers={"Authorization": f"Bearer {EVA_API_KEY}", "Content-Type": "application/json"}
+        headers={**COMMON_HEADER, "Content-Type": "application/json"}
     )
     try:
         resp = urllib.request.urlopen(req)
