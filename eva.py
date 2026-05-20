@@ -243,7 +243,7 @@ def run_cli(command: str, timeout: int = 300):
         if not ALLOW_ALL_CLI:
             msg, _ = llm_chat([{"role": "user", "content": CLI_REVIEW_PROMPT.format(command=command)}], temperature=0.0, thinking=False)
             if '放行' not in msg['content']:
-                ans = read_input("Yes (默认) | No | 直接 Ctrl+C 打断：")
+                ans = read_input("命令批准：yes (直接回车) | no（输入n或no） | 直接 Ctrl+C 打断：")
                 if 'n' in ans.lower():
                     return "用户拒绝运行此命令"
 
