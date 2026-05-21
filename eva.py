@@ -495,7 +495,7 @@ messages = [{"role": "system", "content": SYSTEM_PROMPT.format(hints=hints or "�
 def get_session_file():
     dir_hash = re.sub(r"[\\/:]", "_", os.getcwd())
     os.makedirs(SESSION_DIR, exist_ok=True)
-    return f"{SESSION_DIR}/{dir_hash}.json"
+    return os.path.join(SESSION_DIR, f"{dir_hash}.json")
 
 def acquire_lock():
     lock_file = get_session_file().replace(".json", ".lock")
@@ -554,6 +554,7 @@ def load_session():
 
 def list_sessions():
     session_file = get_session_file()
+    session_name = os.path.basename(session_file)
     print(f"目录: {SESSION_DIR}\n")
     if not os.path.exists(SESSION_DIR):
         print("> 没有找到任何会话记录。")
@@ -569,7 +570,7 @@ def list_sessions():
     for i, f in enumerate(sorted(files), start=1):
         path = os.path.join(SESSION_DIR, f)
         size_KB = (os.path.getsize(path) + 999) // 1000
-        marker = "    <=== 当前目录" if path == session_file else ""
+        marker = "    <=== 当前目录" if f == session_name else ""
         print(f"  {i}. {f} ({format(size_KB, ',')} KB){marker}")
     print("-" * 60)
 
