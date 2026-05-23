@@ -604,7 +604,11 @@ def agent_single_loop():
             sys.stdout.flush()
 
             if not msg.get('tool_calls'):
-                break
+                if msg.get('content'):
+                    break  # 有文字回复，正常结束
+                # 无内容也无工具调用：提示模型，让它自己修正（qwen3.5-27B在长程任务中概率性直接停止）
+                messages.append({"role": "user", "content": "警告：你刚才的回复为空，没有输出任何内容也没有调用工具，请重新回答。"})
+                continue
 
             for tc in msg['tool_calls']:
                 func = tc['function']
