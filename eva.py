@@ -200,13 +200,13 @@ run_cli_schema = {
         "function": {
             "name": "run_cli",
             "description": (
-                f"执行任意 {SHELL} 命令，你可以读取、写入、执行任意内容。参数说明：command是你要执行的命令，会作为{SHELL} {SHELL_FLAG} 的参数值被执行，timeout则是命令的超时时间。"
+                f"执行任意 {SHELL} 命令，你可以读取、写入、执行任意内容。参数说明：command是你要执行的命令，会作为{SHELL} {SHELL_FLAG} 的参数值被执行；timeout是命令的超时时间，单位秒。"
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "command": {"type": "string"},
-                    "timeout": {"type": "integer", "default": 300}
+                    "command": {"type": "string", "description": "要执行的命令"},
+                    "timeout": {"type": "integer", "default": 300, "description": "超时时间，单位秒"}
                 },
                 "required": ["command"]
             }
