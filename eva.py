@@ -68,9 +68,9 @@ def detect_model_len():
 TOKEN_CAP = detect_model_len()
 COMPACT_THRESH = 0.85
 TOOL_RESULT_LEN = min(8000, int(TOKEN_CAP / 20))
-EVA_HOME = os.environ.get("EVA_HOME") or f"{this_dir}/.eva"
-HINT_FILE = f"{EVA_HOME}/hints.md"
-SESSION_DIR = f"{EVA_HOME}/sessions"
+EVA_HOME = os.environ.get("EVA_HOME") or os.path.join(this_dir, ".eva")
+HINT_FILE = os.path.join(EVA_HOME, "hints.md")
+SESSION_DIR = os.path.join(EVA_HOME, "sessions")
 ALLOW_ALL_CLI = False
 COMPACT_PANIC = False
 LAST_USAGE = None
