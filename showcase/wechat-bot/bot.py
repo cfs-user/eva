@@ -1,4 +1,4 @@
-from wechatbot import WeChatBot
+﻿from wechatbot import WeChatBot
 import os
 import subprocess
 
@@ -8,6 +8,7 @@ def run_cli(args, timeout: int = 300):
             args,
             capture_output=True,
             text=True,
+            encoding='utf-8',
             errors='replace',
             cwd=os.getcwd(),
             timeout=timeout,
@@ -26,11 +27,11 @@ def clean_eva_output(out: str):
     if eva_s in out:
         out = out[out.rindex(eva_s)+len(eva_s):]
     
-    session_s = "会话已保存到："
+    session_s = "> 会话已保存到："
     if session_s in out:
         out = out[:out.rindex(session_s)]
 
-    return out.strip().replace('\033[2m', '').replace('\033[0m', '\n--\n')
+    return out.strip().replace('\033[2m', '').replace('\033[0m', '\n\n___\n')
 
 
 bot = WeChatBot()
