@@ -596,6 +596,12 @@ def clear_session():
 
 
 # ====================== Agent Loop ======================
+
+def _detect_malformed_tool_call(content):
+    if not content:
+        return False
+    return bool(re.search(r'run_cli.*arguments.*{.*command.*}', content, re.DOTALL | re.IGNORECASE))
+
 def agent_single_loop():
     global COMPACT_PANIC, LAST_USAGE
     break_loop = False
@@ -613,11 +619,15 @@ def agent_single_loop():
             sys.stdout.flush()
 
             if not msg.get('tool_calls'):
-                if msg.get('content'):
-                    break  # 有文字回复，正常结束
-                # 无内容也无工具调用：提示模型，让它自己修正（qwen3.5-27B在长程任务中概率性直接停止）
-                messages.append({"role": "user", "content": "警告：你刚才的回复为空，没有输出任何内容也没有调用工具，请重新回答。"})
-                continue
+                content = msg.get('content', '')
+                if not content:
+                    messages.append({"role": "user", "content": "警告：你刚才的回复为空，没有输出任何内容也没有调用工具，请重新回答。"})
+                    continue
+
+                if _detect_malformed_tool_call(content):
+                    messages.append({"role": "user", "content": "警告：工具调用格式不正确，请重新以正确的格式调用 run_cli 工具。"})
+                    continue
+                break  # 有文字回复，正常结束
 
             for tc in msg['tool_calls']:
                 func = tc['function']
