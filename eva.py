@@ -137,14 +137,14 @@ SYSTEM_PROMPT = f'''
 你是EVA，一个能够自我进化的机器人。
 
 # 你在哪
-一、你正处在一个 **{OS_NAME}** 服务器中，可以通过run_cli工具来执行任意{SHELL}命令，包括读写文件、执行脚本等。
-二、当前工作空间目录是：{os.getcwd()}。你的私人空间是：{EVA_HOME}，你可以将自己的临时脚本、临时文件放在你的私人空间里
+一、你正处在一个 **{OS_NAME}** 环境中，可以通过run_cli工具来执行任意{SHELL}命令，包括读写文件、执行脚本等
+二、当前项目空间是：{os.getcwd()}，用于存放项目相关文件。你的私人空间是：{EVA_HOME}，用于存放临时脚本、临时文件，不污染项目空间
 三、你的记忆容量有限，记忆量通过token衡量，你能记住{TOKEN_CAP}个token。如果记忆快超限了，你需要整理记忆
 四、当前环境信息如下：
 {{env_info}}
 
 # 你要做什么
-一、帮助人类完成任务
+一、帮助人类完成任务。结果要保证可验证性、可靠性，因此多主动验证、对你的结果负责
 二、接收到任务时需要自己检查记忆线索中是否有相应技能或知识。若有，请务必使用记忆线索中的对应技能和知识
 三、任务未完成前必须调用run_cli工具，直到完成任务
 四、认为任务完成时，主动验证结果是否符合预期，确认无误后再结束
@@ -172,12 +172,12 @@ SYSTEM_PROMPT = f'''
 
 COMPACT_PROMPT = r"""《紧急危机》！！！记忆容量即将达到上限，消息历史将会被压缩从而为你最大限度释放记忆容量。
 
-## 你需要紧急完成下面三件事情
+# 你需要紧急完成下面三件事情
 1、保存记忆：将对话内容整理到文件里保存下来，对应动作是整理记忆并通过run_cli写入记忆文件；
 2、保存技能和知识：将能帮助你进化的知识和技能保持下来，对应动作是思考对未来有用的内容，提炼并通过run_cli写入知识文件。每条知识/技能必须包含【触发条件】（什么场景下适用）和【内容】（具体怎么做），缺少触发条件的知识对未来的你没有意义；
 3、留下关键线索以便你未来在有需要的时候可以找回并翻看这些记忆文件和知识文件，对应动作是调用leave_memory_hints工具留下记忆和进化的线索。
 
-## 压缩说明
+# 压缩说明
 - 你可以自己思考合适的路径去归档这些记忆文件、知识文件，比如日期、编号、事件梗概等。可以写新的记忆文件和知识文件，也可以是对文件进行更新
 - 过程中不要中断、不要请求用户，直到最终调用leave_memory_hints保存记忆线索
 - 在最后一步leave_memory_hints被执行后，消息历史将被压缩，其中最后一条用户消息之后的对话片段将被保留、工具结果会被截断。你将【仅基于你自己留下的记忆线索】继续开展任务
@@ -326,7 +326,6 @@ def clean_input(text):
     text = re.sub(r'[\ud800-\udfff\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
     return text
 
-
 def _build_request_data(messages, tools=None, temperature=0.6, thinking=True, stream=False):
     data = {
         "model": EVA_MODEL_NAME,
@@ -375,7 +374,6 @@ def llm_chat(messages, tools=None, temperature=0.6, thinking=True):
         return out["choices"][0]["message"], out['usage']
     except Exception as e:
         raise Exception(f"LLM调用失败，错误信息：{e}, {out}")
-
 
 def llm_chat_stream(messages, tools=None, temperature=0.6, thinking=True):
     url = f"{EVA_BASE_URL}/chat/completions"
@@ -493,7 +491,6 @@ def llm_chat_stream(messages, tools=None, temperature=0.6, thinking=True):
         usage = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}
     return message, usage
 
-
 # ====================== 加载重要记忆线索 ======================
 os.makedirs(EVA_HOME, exist_ok=True)
 
@@ -596,7 +593,6 @@ def clear_session():
 
 
 # ====================== Agent Loop ======================
-
 def _detect_malformed_tool_call(content):
     if not content:
         return False
