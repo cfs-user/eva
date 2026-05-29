@@ -103,3 +103,9 @@ EVA通过`.eva/hints.md`获取记忆线索，该线索会被拼接到system prom
    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=usepr/eva&type=date&legend=top-left" />
  </picture>
 </a>
+
+## 感谢大家贡献
+
+<a href="https://github.com/usepr/eva/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=usepr/eva" />
+</a>
