@@ -704,13 +704,17 @@ def human_loop(user_ask=None, save_after=False):
                     release_lock()
                 break
         except KeyboardInterrupt:
-            save_session(messages)
-            release_lock()
-            print("\n已中断，会话已保存")
+            if not user_ask or save_after:
+                save_session(messages)
+                print("\n已中断" + ("，会话已保存" if (not user_ask or save_after) else ""))
+                release_lock()
+            else:
+                print("\n已中断")
             break
         except Exception as e:
             print(f"主循环异常：{e}")
-            release_lock()
+            if not user_ask or save_after:
+                release_lock()
             break
 
 def setup_eva_script():
