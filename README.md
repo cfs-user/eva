@@ -17,7 +17,6 @@ EVA是个麻雀虽小、五脏俱全的Agent智能体，相当于低配版Claude
 
 ## 快速开始
 
-
 0. 直接创建一个eva.py并复制本仓库的eva.py文本内容粘贴进去（docker环境、运维环境等也很容易粘贴代码，无需复杂安装，Just **Paste and Go**）。当然，你也可以git clone本仓库
 
 1. 在终端执行`export EVA_API_KEY=你的deepseek API key`（Windows系统则是`set`命令）
@@ -61,40 +60,19 @@ eva支持的选项：
   -s, --with-session    搭配-u使用，载入并保存session
 ```
 
-## EVA退出说明
+## EVA退出说明（按Ctrl + C）
 
-Ctrl + C直接中断，程序会自动保存session。下次启动时将自动加载
+1、EVA运行过程可以随时打断，无论是打断LLM推理、打断工具执行、还是退出EVA，都是按 Ctrl + C
 
+2、打断是个很有用的行为，比如某个命令超时时间太久你不想再等待，或者你想起有个背景忘记向EVA澄清需要补充说明，或者你发现前面对话有错别字想做修正说明  —— **注意，无论何时你都可以 Ctrl + C 打断EVA，无论何时 🎯🎯**
 
-## 关于 Skill & Command
+## 关于 Skill
 
-EVA通过`.eva/hints.md`获取记忆线索，该线索会被拼接到system prompt，因此你可以在hints.md里放置技能、命令的相关提示。EVA会在自己认为需要的时候进入这些目录查看对应的技能内容。
+EVA通过`.eva/hints.md`获取记忆线索，无论是外部技能，还是EVA自己提炼的技能/知识，都会将对应线索放在`hints.md`中。
 
-`.eva/hints.md`文件内容示例：
+为了支持外部技能，你只需要在eva启动时让它“分析下xxx/xxx/skills目录中的可用技能，提炼线索到hints.md中” 或者 “分析下skillhub上的xxx技能，提炼线索到hints.md中”，然后重启eva即可  —— **EVA的事情EVA自己做 🤖🤖**
 
-```markdown
-.eva/commands、.eva/skills/目录里存储了存储了大量的命令和技能，可以帮助你完成任务。其中，
-1. xxxx/，可用于xxxx
-    触发条件：当涉及xxxx时，可以查阅xxxx/底下的技能文件
-2. yyyy/, 可用于yyyy
-    触发条件：当涉及yyyy时，可以查阅yyyy/底下的技能文件
-```
-
-通过 Skill & Command，可以扩展EVA的各种能力。
-
-
-## 关于Contributing
-
-💗💗💗
-
-欢迎大家为EVA项目贡献，如提高EVA的自主水平、增加其他语言的单文件版本、甚至英文版等等。
-
-当前EVA的设计，有下面几点考虑：
-
-1. 尽量发挥EVA的自主性，让EVA自我驱动去解决问题，而非加各种流程约束
-2. 保持极简。我想就是因为简单，所以EVA才不简单。“完美不是在没有东西可以增加的时候，而是在没有东西可以删除的时候”
-3. 长程任务连续性。当前的记忆压缩比较粗暴，无法很好保证压缩后的任务延续性，希望有更优雅的方法进行记忆压缩（工程上我们可以类似Claude Code那样做各种层次化压缩，但还记得前面第1点吗，需要尽量发挥EVA的自主性，因此希望记忆压缩可以更简单、更优雅、更AI自我驱动）
-4. 自进化。机器人三大定律本来只是插在EVA中的一个meme，但它好像跟智能体发展挺契合的。当前自进化实现方式很简单，完全靠EVA记录知识、技能和线索，期望有更优雅的方式
+## Star记录
 
 <a href="https://www.star-history.com/?repos=usepr%2Feva&type=date&legend=top-left">
  <picture>
@@ -104,7 +82,7 @@ EVA通过`.eva/hints.md`获取记忆线索，该线索会被拼接到system prom
  </picture>
 </a>
 
-## 感谢大家贡献
+## 贡献者 ✨
 
 <a href="https://github.com/usepr/eva/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=usepr/eva" />
