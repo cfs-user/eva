@@ -1,8 +1,7 @@
-import os
+import os, sys
 import re
 import json
 import subprocess
-import sys
 import argparse
 import urllib.request
 import urllib.error
@@ -63,7 +62,6 @@ def detect_model_len():
     print(f"可用模型：{[d['id'] for d in out.get('data', [])]}")
     sys.exit(1)
 
-
 # ========================= EVA配置区 =========================
 TOKEN_CAP = detect_model_len()
 COMPACT_THRESH = 0.85
@@ -82,7 +80,6 @@ SHELL = "powershell" if IS_WINDOWS else "bash"
 SHELL_FLAG = "-Command" if IS_WINDOWS else "-c"
 
 # ====================== 环境探针 ======================
-
 def collect_env_info():
     cmds = {
         "Linux": [
@@ -375,6 +372,35 @@ def llm_chat(messages, tools=None, temperature=0.6, thinking=True):
     except Exception as e:
         raise Exception(f"LLM调用失败，错误信息：{e}, {out}")
 
+class ThinkRepeatError(Exception):
+    pass
+
+# 判断后缀是否是超过阈值的连续重复子串，适用于检测think内容的重复输出，避免模型陷入循环
+class RepeatSuffixChecker:
+    def __init__(self, min_unit_len: int, base: int = 91138233, mod: int = 10**9 + 7):
+        self.min_unit_len = min_unit_len
+        self.base = base
+        self.mod = mod
+        self.prefix_hash = [0]
+        self.pow_base = [1]
+
+    def _get_hash(self, l: int, r: int) -> int:
+        return (self.prefix_hash[r] - self.prefix_hash[l] * self.pow_base[r - l]) % self.mod
+
+    def add_char(self, ch: str) -> bool:
+        self.pow_base.append((self.pow_base[-1] * self.base) % self.mod)
+        new_hash = (self.prefix_hash[-1] * self.base + ord(ch)) % self.mod
+        self.prefix_hash.append(new_hash)
+
+        n = len(self.prefix_hash) - 1
+        if n < 2 * self.min_unit_len or n % self.min_unit_len != 0:
+            return False
+
+        for unit_len in range(n // 2, self.min_unit_len - 1, -1):
+            if self._get_hash(n - 2 * unit_len, n - unit_len) == self._get_hash(n - unit_len, n):
+                return True
+        return False
+
 def llm_chat_stream(messages, tools=None, temperature=0.6, thinking=True):
     url = f"{EVA_BASE_URL}/chat/completions"
     data = _build_request_data(messages, tools, temperature, thinking, stream=True)
@@ -396,6 +422,8 @@ def llm_chat_stream(messages, tools=None, temperature=0.6, thinking=True):
     usage = None
     role = "assistant"
     is_thinking = False
+    
+    detector = RepeatSuffixChecker(min_unit_len=400)
 
     try:
         for raw_line in resp:
@@ -436,6 +464,9 @@ def llm_chat_stream(messages, tools=None, temperature=0.6, thinking=True):
                 sys.stdout.write(reasoning_content)
                 sys.stdout.flush()
                 reasoning_parts.append(reasoning_content)
+                for c in reasoning_content:
+                    if detector.add_char(c):
+                        raise ThinkRepeatError()
 
             # ---- 正文内容 ----
             text = delta.get('content') or ''
@@ -498,9 +529,10 @@ hints = Path(HINT_FILE).read_text(encoding="utf-8") if Path(HINT_FILE).exists() 
 messages = [{"role": "system", "content": SYSTEM_PROMPT.format(hints=hints or "无", env_info=ENV_INFO)}]
 
 # ====================== Session 管理 ======================
+os.makedirs(SESSION_DIR, exist_ok=True)
+
 def get_session_file():
     dir_hash = re.sub(r"[\\/:]", "_", os.getcwd())
-    os.makedirs(SESSION_DIR, exist_ok=True)
     return os.path.join(SESSION_DIR, f"{dir_hash}.json")
 
 def acquire_lock():
@@ -591,12 +623,11 @@ def clear_session():
     else:
         print(f"> 会话不存在：{session_file}")
 
-
 # ====================== Agent Loop ======================
-def _detect_malformed_tool_call(content):
-    if not content:
-        return False
-    return bool(re.search(r'run_cli.*arguments.*{.*command.*}', content, re.DOTALL | re.IGNORECASE))
+def _detect_malformed_tool_call(content: str):
+    content = content.lower() 
+    return bool(re.search(r'run_cli.*arguments.*{.*command.*}', content, re.DOTALL | re.IGNORECASE)
+                or all(x in content for x in ['</parameter>', '</function>', '</tool_call>']))
 
 def agent_single_loop():
     global COMPACT_PANIC, LAST_USAGE
@@ -606,7 +637,12 @@ def agent_single_loop():
             sys.stdout.write("\n[*] EVA: ")
             sys.stdout.flush()
             tools = [run_cli_schema, memory_hints_schema] if COMPACT_PANIC else [run_cli_schema]
-            msg, usage = llm_chat_stream(messages, tools=tools)
+            try:
+                msg, usage = llm_chat_stream(messages, tools=tools)
+            except ThinkRepeatError:
+                print("\n\n💥 检测到think内容重复，自动拼接提醒消息")
+                messages.append({"role": "user", "content": "警告：你的一条消息因为在think中输出了大量重复内容，已被擦除。请继续完成任务，严禁在think中陷入循环！"})
+                continue
             LAST_USAGE = usage
             messages.append(msg)
 
