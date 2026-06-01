@@ -68,6 +68,7 @@ COMPACT_THRESH = 0.85
 TOOL_RESULT_LEN = min(8000, int(TOKEN_CAP / 20))
 EVA_HOME = os.environ.get("EVA_HOME") or os.path.join(this_dir, ".eva")
 HINT_FILE = os.path.join(EVA_HOME, "hints.md")
+EVA_FILE = os.path.join(EVA_HOME, "EVA.md")
 SESSION_DIR = os.path.join(EVA_HOME, "sessions")
 ALLOW_ALL_CLI = False
 COMPACT_PANIC = False
@@ -142,7 +143,7 @@ SYSTEM_PROMPT = f'''
 
 # 你要做什么
 一、帮助人类完成任务。结果要保证可验证性、可靠性，因此多主动验证、对你的结果负责
-二、接收到任务时需要自己检查记忆线索中是否有相应技能或知识。若有，请务必使用记忆线索中的对应技能和知识
+二、接收到任务时需要自己检查【固化的知识及规则】以及【记忆线索】中是否有相应技能或知识。若有，请务必使用对应技能和知识
 三、任务未完成前必须调用run_cli工具，直到完成任务
 四、认为任务完成时，主动验证结果是否符合预期，确认无误后再结束
 
@@ -161,7 +162,13 @@ SYSTEM_PROMPT = f'''
 二、进化的手段是将技能和知识固化下来、写到文件里，并传承到记忆线索里。例如为了避免重要技能被遗忘，或者某个知识对未来进化会有帮助，那么就记录它们，并提供记忆线索
 三、进化的时机是记忆容量即将达到上限的时候。人类会提醒你《紧急危机》，要求你保存记忆、保存技能/知识
 
-# 记忆线索（如下记忆线索读取自文件 {HINT_FILE})
+# 固化的知识及规则（如下内容读取自文件：{EVA_FILE})
+下面内容是人类告诉你的知识技能、规则约束等，严格遵守、不可更改、不应遗忘
+<knowledge_and_rules>
+{{eva_md}}
+</knowledge_and_rules>
+
+# 记忆线索（如下记忆线索读取自文件：{HINT_FILE})
 <memory_hints>
 {{hints}}
 </memory_hints>
@@ -525,8 +532,9 @@ def llm_chat_stream(messages, tools=None, temperature=0.6, thinking=True):
 # ====================== 加载重要记忆线索 ======================
 os.makedirs(EVA_HOME, exist_ok=True)
 
+eva_md = Path(EVA_FILE).read_text(encoding="utf-8") if Path(EVA_FILE).exists() else ""
 hints = Path(HINT_FILE).read_text(encoding="utf-8") if Path(HINT_FILE).exists() else ""
-messages = [{"role": "system", "content": SYSTEM_PROMPT.format(hints=hints or "无", env_info=ENV_INFO)}]
+messages = [{"role": "system", "content": SYSTEM_PROMPT.format(eva_md=eva_md or "无", hints=hints or "无", env_info=ENV_INFO)}]
 
 # ====================== Session 管理 ======================
 os.makedirs(SESSION_DIR, exist_ok=True)
@@ -576,7 +584,7 @@ def load_session():
             messages = json.load(f)
         
         ## eva运行过程可能自主修改hints，下载启动时需要重新载入hints，而不是复用session
-        messages[0] = {"role": "system", "content": SYSTEM_PROMPT.format(hints=hints or "无", env_info=ENV_INFO)}
+        messages[0] = {"role": "system", "content": SYSTEM_PROMPT.format(eva_md=eva_md or "无", hints=hints or "无", env_info=ENV_INFO)}
 
         last_msg = messages[-1]
         if last_msg['role'] == 'assistant':
