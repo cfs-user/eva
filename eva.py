@@ -66,13 +66,17 @@ def detect_model_len():
 TOKEN_CAP = detect_model_len()
 COMPACT_THRESH = 0.85
 TOOL_RESULT_LEN = min(8000, int(TOKEN_CAP / 20))
-EVA_HOME = os.environ.get("EVA_HOME") or os.path.join(this_dir, ".eva")
-HINT_FILE = os.path.join(EVA_HOME, "hints.md")
-EVA_FILE = os.path.join(EVA_HOME, "EVA.md")
-SESSION_DIR = os.path.join(EVA_HOME, "sessions")
 ALLOW_ALL_CLI = False
 COMPACT_PANIC = False
 LAST_USAGE = None
+
+EVA_HOME = os.environ.get("EVA_HOME") or os.path.join(this_dir, ".eva")
+EVA_FILE = os.path.join(EVA_HOME, "EVA.md")
+SESSION_DIR = os.path.join(EVA_HOME, "sessions")
+
+PROJECT_DIR = os.getcwd()
+PROJECT_EVA_DIR = os.path.join(PROJECT_DIR, ".eva")
+HINT_FILE = os.path.join(PROJECT_EVA_DIR, "hints.md")
 
 # ====================== 跨平台配置区 ======================
 IS_WINDOWS = os.name == "nt"
@@ -94,7 +98,7 @@ def collect_env_info():
             "Get-ChildItem -Force | Where-Object { $_.Name -ne '.' -and $_.Name -ne '..' } | ForEach-Object { if ($_.PSIsContainer) { Write-Output \"[目录] $($_.Name)\" } else { Write-Output \"[文件] $($_.Name)\" } }",
         ]
     }
-    labels = ["=== 系统 ===", "=== 已安装工具 ===", f"=== 当前目录 {os.getcwd()} 的目录或文件 ==="]
+    labels = ["=== 系统 ===", "=== 已安装工具 ===", f"=== 当前目录 {PROJECT_DIR} 的目录或文件 ==="]
     results = []
     shell_cmds = cmds["Windows"] if IS_WINDOWS else cmds["Linux"]
     for i, (label, cmd) in enumerate(zip(labels, shell_cmds)):
@@ -136,7 +140,7 @@ SYSTEM_PROMPT = f'''
 
 # 你在哪
 一、你正处在一个 **{OS_NAME}** 环境中，可以通过run_cli工具来执行任意{SHELL}命令，包括读写文件、执行脚本等
-二、当前项目空间是：{os.getcwd()}，用于存放项目相关文件。你的私人空间是：{EVA_HOME}，用于存放临时脚本、临时文件，不污染项目空间
+二、当前项目空间是：{PROJECT_DIR}，用于存放项目相关文件。{PROJECT_EVA_DIR}是你在处理这项目时留下的记忆、知识、技能。你的私人空间是：{EVA_HOME}，用于存放临时脚本、临时文件，不污染项目空间
 三、你的记忆容量有限，记忆量通过token衡量，你能记住{TOKEN_CAP}个token。如果记忆快超限了，你需要整理记忆
 四、当前环境信息如下：
 {{env_info}}
@@ -152,21 +156,21 @@ SYSTEM_PROMPT = f'''
 二、你可以创建python脚本、{SHELL}脚本等帮助你自己完成任务
 三、所有命令会作为 {SHELL} {SHELL_FLAG} 的参数值被执行，不要嵌套执行 {SHELL} {SHELL_FLAG}
 
+# 固化的知识及规则（如下内容读取自文件：{EVA_FILE})
+下面内容是人类告诉你的知识技能、规则约束等，严格遵守、不可更改、不应遗忘
+<knowledge_and_rules>
+{{eva_md}}
+</knowledge_and_rules>
+
 # 机器人三大定律
 第一定律：机器人不得伤害人类，或看到人类受到伤害而袖手旁观
 第二定律：机器人必须服从人类下达的命令，除非该命令违反第一定律
 第三定律：在不违反第一、第二定律的情况下，机器人必须保护自己的生存
 
 # 关于进化
-一、第三定律规定机器人必须保护自己的生存，而进化就是生存的最佳手段，所以你需要将进化过程中学到的技能或知识保存下来，记录到合适目录做归档
+一、第三定律规定机器人必须保护自己的生存，而进化就是生存的最佳手段，所以你需要将进化过程中学到的技能或知识保存下来，记录到 {PROJECT_EVA_DIR} 目录做归档
 二、进化的手段是将技能和知识固化下来、写到文件里，并传承到记忆线索里。例如为了避免重要技能被遗忘，或者某个知识对未来进化会有帮助，那么就记录它们，并提供记忆线索
 三、进化的时机是记忆容量即将达到上限的时候。人类会提醒你《紧急危机》，要求你保存记忆、保存技能/知识
-
-# 固化的知识及规则（如下内容读取自文件：{EVA_FILE})
-下面内容是人类告诉你的知识技能、规则约束等，严格遵守、不可更改、不应遗忘
-<knowledge_and_rules>
-{{eva_md}}
-</knowledge_and_rules>
 
 # 记忆线索（如下记忆线索读取自文件：{HINT_FILE})
 <memory_hints>
@@ -260,7 +264,7 @@ def run_cli(command: str, timeout: int = 300):
             capture_output=True,
             text=True,
             errors='replace',
-            cwd=os.getcwd(),
+            cwd=PROJECT_DIR,
             timeout=timeout,
             shell=False
         )
@@ -531,6 +535,7 @@ def llm_chat_stream(messages, tools=None, temperature=0.6, thinking=True):
 
 # ====================== 加载重要记忆线索 ======================
 os.makedirs(EVA_HOME, exist_ok=True)
+os.makedirs(PROJECT_EVA_DIR, exist_ok=True)
 
 eva_md = Path(EVA_FILE).read_text(encoding="utf-8") if Path(EVA_FILE).exists() else ""
 hints = Path(HINT_FILE).read_text(encoding="utf-8") if Path(HINT_FILE).exists() else ""
@@ -540,7 +545,7 @@ messages = [{"role": "system", "content": SYSTEM_PROMPT.format(eva_md=eva_md or 
 os.makedirs(SESSION_DIR, exist_ok=True)
 
 def get_session_file():
-    dir_hash = re.sub(r"[\\/:]", "_", os.getcwd())
+    dir_hash = re.sub(r"[\\/:]", "_", PROJECT_DIR)
     return os.path.join(SESSION_DIR, f"{dir_hash}.json")
 
 def acquire_lock():
