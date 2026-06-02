@@ -51,6 +51,9 @@ $env:EVA_API_KEY=sk-xxxxx
 
 ```python
 eva支持的选项：
+usage: eva.py [-h] [-a] [-l] [-c] [-u USER_ASK] [-s] [--until UNTIL]
+
+options:
   -h, --help            show this help message and exit
   -a, --allow-all       允许所有命令无需用户确认即可执行
   -l, --list-session    列出所有session
@@ -58,6 +61,7 @@ eva支持的选项：
   -u USER_ASK, --user-ask USER_ASK
                         独立地针对一条用户提问执行EVA
   -s, --with-session    搭配-u使用，载入并保存session
+  --until UNTIL         搭配-u使用，设定任务达成条件，子串匹配
 ```
 
 ## EVA退出说明（按Ctrl + C）

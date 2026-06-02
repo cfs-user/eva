@@ -730,28 +730,38 @@ def agent_single_loop():
             break
 
 # ====================== 主循环 ======================
-def human_loop(user_ask=None, save_after=False):
+def human_loop(user_ask=None, save_after=False, until: str=""):
     global messages
+
+    if user_ask:
+        if until:
+            user_ask = f"{user_ask}\n----注意，这是一个无人类参与的任务，你需要自行判断任务是否达到了完成状态。确认完成状态达到后需要输出字符串：{until}。如果未输出，系统会提示你继续完成任务----"
+        print(f"[-] You: {user_ask}\n")
+        messages.append({"role": "user", "content": clean_input(user_ask)})
+
     while True:
         try:
             display_usage(LAST_USAGE, TOKEN_CAP)
             if user_ask:
-                user_input = user_ask
-                print(f"[-] You: {user_input}\n")
-            else:
-                print("")
-                user_input = read_input("[-] You: ").strip()
-                if not user_input:
-                    continue
+                while True:
+                    agent_single_loop()
+                    msg = messages[-1]
+                    if until and msg.get('role') == 'assistant' and until in msg.get('content', ''):
+                        break
+                    messages.append({"role": "user", "content": f"系统提示！未检测到停止字符串：{until}，请继续完成任务"})
 
-            messages.append({"role": "user", "content": clean_input(user_input)})
-            agent_single_loop()
-
-            if user_ask:
                 if save_after:
                     save_session(messages)
                     release_lock()
                 break
+            
+            print("")
+            user_input = read_input("[-] You: ").strip()
+            if not user_input:
+                continue
+
+            messages.append({"role": "user", "content": clean_input(user_input)})
+            agent_single_loop()    
         except KeyboardInterrupt:
             if not user_ask or save_after:
                 save_session(messages)
@@ -807,6 +817,8 @@ def main():
                         help="独立地针对一条用户提问执行EVA")
     parser.add_argument("-s", "--with-session", action="store_true",
                         help="搭配-u使用，载入并保存session")
+    parser.add_argument("--until", type=str,
+                        help="搭配-u使用，设定任务达成条件，子串匹配")                  
     args = parser.parse_args()
 
     ALLOW_ALL_CLI = args.allow_all
@@ -837,7 +849,7 @@ def main():
         if loaded_messages is not None:
             messages = loaded_messages
 
-    human_loop(args.user_ask, save_after=args.with_session)
+    human_loop(args.user_ask, save_after=args.with_session, until=args.until)
 
 if __name__ == "__main__":
     main()
