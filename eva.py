@@ -304,7 +304,7 @@ def leave_memory_hints(hints):
         kept.append(_trim_tool_content(m))
 
     messages = [
-            {"role": "system", "content": SYSTEM_PROMPT.format(hints=hints, env_info=ENV_INFO)},
+            {"role": "system", "content": SYSTEM_PROMPT.format(eva_md=eva_md or "无", hints=hints or "无", env_info=ENV_INFO)},
             {"role": "user", "content":
                 "《系统提示》！！！之前任务过程占用了太多token，记忆已耗尽，记忆压缩被触发。\n" \
                 "不过别担心，记忆压缩时你已经调用leave_memory_hints保留下了关键内容、对应记忆线索（参照系统提示中的`# 记忆线索`区块）以及你最后的回答内容。\n" \
