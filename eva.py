@@ -730,7 +730,7 @@ def agent_single_loop():
             break
 
 # ====================== 主循环 ======================
-def human_loop(user_ask=None, save_after=False, until: str=""):
+def human_loop(user_ask=None, save_after=False, until=""):
     global messages
 
     if user_ask:
@@ -746,7 +746,7 @@ def human_loop(user_ask=None, save_after=False, until: str=""):
                 while True:
                     agent_single_loop()
                     msg = messages[-1]
-                    if until and msg.get('role') == 'assistant' and until in msg.get('content', ''):
+                    if not until or (msg.get('role') == 'assistant' and until in msg.get('content', '')):
                         break
                     messages.append({"role": "user", "content": f"系统提示！未检测到停止字符串：{until}，请继续完成任务"})
 
@@ -849,7 +849,7 @@ def main():
         if loaded_messages is not None:
             messages = loaded_messages
 
-    human_loop(args.user_ask, save_after=args.with_session, until=args.until)
+    human_loop(args.user_ask, save_after=args.with_session, until=args.until or "")
 
 if __name__ == "__main__":
     main()
