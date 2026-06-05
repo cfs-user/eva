@@ -735,7 +735,7 @@ def human_loop(user_ask=None, save_after=False, until=""):
 
     if user_ask:
         if until:
-            user_ask = f"{user_ask}\n----注意，这是一个无人类参与的任务，你需要自行判断任务是否达到了完成状态。确认完成状态达到后需要输出字符串：{until}。如果未输出，系统会提示你继续完成任务----"
+            user_ask = f"{user_ask}\n----系统提醒！注意，人类已经离开，这将是一个无人类参与的任务，你需要自行判断任务是否完成。确认任务到达完成状态达到后你需要输出字符串：{until}。如果未输出，系统会提示你继续完成任务----"
         print(f"[-] You: {user_ask}\n")
         messages.append({"role": "user", "content": clean_input(user_ask)})
 
@@ -748,7 +748,7 @@ def human_loop(user_ask=None, save_after=False, until=""):
                     msg = messages[-1]
                     if not until or (msg.get('role') == 'assistant' and until in msg.get('content', '')):
                         break
-                    messages.append({"role": "user", "content": f"系统提示！未检测到停止字符串：{until}，请继续完成任务"})
+                    messages.append({"role": "user", "content": f"系统提醒！未检测到停止字符串：{until}，请继续完成任务"})
 
                 if save_after:
                     save_session(messages)
