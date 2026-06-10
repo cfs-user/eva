@@ -302,6 +302,8 @@ def leave_memory_hints(hints):
     kept = []
     for m in messages[last_user_i:compact_i]:
         kept.append(_trim_tool_content(m))
+    if len(kept) > 200: # 最多保留200条消息
+        kept = kept[:100] + kept[-100:]
 
     messages = [
             {"role": "system", "content": SYSTEM_PROMPT.format(eva_md=eva_md or "无", hints=hints or "无", env_info=ENV_INFO)},
