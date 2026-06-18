@@ -31,7 +31,7 @@ export EVA_MODEL_NAME=xxxxx
 export EVA_API_KEY=sk-xxxxx
 ```
 
-macOS 设置方法（zsh）：
+macOS 设置方法（zsh，如需在 macOS 上长期生效，可以将上述 export 配置写入`~/.zshrc`。）：
 
 ```bash
 export EVA_BASE_URL=http://xxxxxxxxx/v1
@@ -54,8 +54,6 @@ $env:EVA_BASE_URL="http://xxxxxxxxx/v1"
 $env:EVA_MODEL_NAME="xxxxx"
 $env:EVA_API_KEY="sk-xxxxx"
 ```
-
-如需在 macOS 上长期生效，可以将上述 export 配置写入`~/.zshrc`。
 
 2. 运行`python3 eva.py`。首次运行会生成`eva`脚本，Linux 下执行`source ~/.bashrc`让脚本生效；macOS 下执行`source ~/.zshrc`让脚本生效。后续直接输入命令`eva`即可
 
