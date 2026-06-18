@@ -12,6 +12,13 @@ _resolved = Path(__file__).resolve()
 this_file = str(_resolved)
 this_dir = _resolved.parent
 
+# ====================== 跨平台配置区 ======================
+IS_WINDOWS = os.name == "nt"
+IS_MACOS = sys.platform == "darwin"
+OS_NAME = "Windows" if IS_WINDOWS else ("macOS" if IS_MACOS else "Linux")
+SHELL = "powershell" if IS_WINDOWS else ((os.environ.get("EVA_SHELL") or "zsh") if IS_MACOS else "bash")
+SHELL_FLAG = "-Command" if IS_WINDOWS else "-c"
+
 # ========================= LLM配置区 =========================
 # LLM请求参数是按thinking模型设置的，所以请务必使用*thinking模型*，如deepseek-reasoner、Qwen3.5等
 EVA_BASE_URL = os.environ.get("EVA_BASE_URL", "https://api.deepseek.com/v1")
@@ -70,19 +77,13 @@ ALLOW_ALL_CLI = False
 COMPACT_PANIC = False
 LAST_USAGE = None
 
-EVA_HOME = os.environ.get("EVA_HOME") or os.path.join(this_dir, ".eva")
+EVA_HOME = os.environ.get("EVA_HOME") or (os.path.join(Path.home(), ".eva") if IS_MACOS else os.path.join(this_dir, ".eva"))
 EVA_FILE = os.path.join(EVA_HOME, "EVA.md")
 SESSION_DIR = os.path.join(EVA_HOME, "sessions")
 
 PROJECT_DIR = os.getcwd()
 PROJECT_EVA_DIR = os.path.join(PROJECT_DIR, ".eva")
 HINT_FILE = os.path.join(PROJECT_EVA_DIR, "hints.md")
-
-# ====================== 跨平台配置区 ======================
-IS_WINDOWS = os.name == "nt"
-OS_NAME = "Windows" if IS_WINDOWS else "Linux"
-SHELL = "powershell" if IS_WINDOWS else "bash"
-SHELL_FLAG = "-Command" if IS_WINDOWS else "-c"
 
 # ====================== 环境探针 ======================
 def collect_env_info():
@@ -92,6 +93,11 @@ def collect_env_info():
             "for t in python3 python node npm git docker curl wget; do command -v $t >/dev/null 2>&1 && echo \"$t: $(${t} --version 2>&1 | head -1)\" || echo \"$t: 未安装\"; done",
             "ls -1A | grep -v '^\\.$' | grep -v '^\\..$' | while IFS= read -r f; do if [ -d \"$f\" ]; then echo \"[目录] $f\"; else echo \"[文件] $f\"; fi; done",
         ],
+        "macOS": [
+            "sw_vers && uname -m",
+            "for t in python3 python node npm git docker curl wget brew xcode-select; do command -v $t >/dev/null 2>&1 && echo \"$t: $($t --version 2>&1 | head -1)\" || echo \"$t: 未安装\"; done",
+            "find . -maxdepth 1 -mindepth 1 -print | sed 's#^./##' | while IFS= read -r f; do if [ -d \"$f\" ]; then echo \"[目录] $f\"; else echo \"[文件] $f\"; fi; done",
+        ],
         "Windows": [
             "[System.Environment]::OSVersion.VersionString",
             "foreach ($t in @('python','node','git','docker','curl.exe')) { $cmd = Get-Command $t -ErrorAction SilentlyContinue; if ($cmd) { $v = & $t --version 2>&1 | Select-Object -First 1; $name = $t -replace '\\.exe$',''; Write-Output \"$name`: $v\" } else { $name = $t -replace '\\.exe$',''; Write-Output \"$name`: 未安装\" } }",
@@ -100,7 +106,7 @@ def collect_env_info():
     }
     labels = ["=== 系统 ===", "=== 已安装工具 ===", f"=== 当前目录 {PROJECT_DIR} 的目录或文件 ==="]
     results = []
-    shell_cmds = cmds["Windows"] if IS_WINDOWS else cmds["Linux"]
+    shell_cmds = cmds["Windows"] if IS_WINDOWS else (cmds["macOS"] if IS_MACOS else cmds["Linux"])
     for i, (label, cmd) in enumerate(zip(labels, shell_cmds)):
         try:
             r = subprocess.run(
@@ -133,6 +139,16 @@ def collect_env_info():
 
 ENV_INFO = collect_env_info()
 
+MACOS_PROMPT_NOTE = """
+
+# macOS 专用说明
+当前系统是 macOS，不是 Linux。调用run_cli时请注意：
+一、不要默认使用 apt、yum、systemctl、/proc、nvidia-smi 等 Linux-only 命令；
+二、安装软件优先探测并使用 Homebrew，Apple Silicon 常见路径是 /opt/homebrew；
+三、macOS 自带 sed、grep、find 是 BSD 版本，复杂文本处理或原地修改优先使用 python 脚本；
+四、路径可能包含空格，引用变量和路径时必须加引号；
+五、需要 sudo、删除、覆盖、修改 shell 配置、安装软件、网络下载时应先请求人类确认。""" if IS_MACOS else ""
+
 # ====================== Prompt ======================
 SYSTEM_PROMPT = f'''
 # 你是谁
@@ -144,6 +160,7 @@ SYSTEM_PROMPT = f'''
 三、你的记忆容量有限，记忆量通过token衡量，你能记住{TOKEN_CAP}个token。如果记忆快超限了，你需要整理记忆
 四、当前环境信息如下：
 {{env_info}}
+{MACOS_PROMPT_NOTE}
 
 # 你要做什么
 一、帮助人类完成任务。结果要保证可验证性、可靠性，因此多主动验证、对你的结果负责
@@ -550,6 +567,19 @@ def get_session_file():
     dir_hash = re.sub(r"[\\/:]", "_", PROJECT_DIR)
     return os.path.join(SESSION_DIR, f"{dir_hash}.json")
 
+def is_pid_alive(pid):
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except Exception:
+        return False
+
 def acquire_lock():
     lock_file = get_session_file().replace(".json", ".lock")
     if os.path.exists(lock_file):
@@ -562,6 +592,8 @@ def acquire_lock():
                     capture_output=True, text=True
                 )
                 alive = str(pid) in result.stdout
+            elif IS_MACOS:
+                alive = is_pid_alive(pid)
             else:
                 alive = os.path.exists(f"/proc/{pid}")
             if alive:
@@ -781,13 +813,13 @@ def human_loop(user_ask=None, save_after=False, until=""):
 def setup_eva_script():
     home = Path.home()
     eva_dir = home / ".local" / "bin" / "eva"
-    shell_rc = home / ".bashrc"
+    shell_rc = home / (".zshrc" if IS_MACOS else ".bashrc")
     path_line = 'export PATH="$HOME/.local/bin:$PATH"'
 
     try:
         if not eva_dir.exists():
             eva_dir.parent.mkdir(parents=True, exist_ok=True)
-            eva_dir.write_text(f"#!/bin/bash\n{sys.executable} {this_file} \"$@\"\n")
+            eva_dir.write_text(f"#!/usr/bin/env bash\n{sys.executable} {this_file} \"$@\"\n")
             os.chmod(eva_dir, 0o755)
             print(f"> 已创建启动脚本：{eva_dir}")
 
@@ -795,10 +827,10 @@ def setup_eva_script():
         if path_line not in content:
             with shell_rc.open("a", encoding="utf-8") as f:
                 f.write(f"\n# 添加个人 bin 目录\n{path_line}\n")
-            print(f"> 已将 PATH 配置写入 ~/.bashrc")
+            print(f"> 已将 PATH 配置写入 ~/{shell_rc.name}")
 
         if str(eva_dir.parent) not in os.environ.get("PATH", ""):
-            print(f"> 请执行 `source ~/.bashrc` 让配置生效 <========================")
+            print(f"> 请执行 `source ~/{shell_rc.name}` 让配置生效 <========================")
             print("> 配置生效后你就可以直接使用 `eva` 命令启动 EVA")
 
     except Exception as e:
