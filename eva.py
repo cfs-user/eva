@@ -77,7 +77,7 @@ ALLOW_ALL_CLI = False
 COMPACT_PANIC = False
 LAST_USAGE = None
 
-EVA_HOME = os.environ.get("EVA_HOME") or (os.path.join(Path.home(), ".eva") if IS_MACOS else os.path.join(this_dir, ".eva"))
+EVA_HOME = os.environ.get("EVA_HOME") or os.path.join(this_dir, ".eva")
 EVA_FILE = os.path.join(EVA_HOME, "EVA.md")
 SESSION_DIR = os.path.join(EVA_HOME, "sessions")
 
