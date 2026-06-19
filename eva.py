@@ -139,15 +139,7 @@ def collect_env_info():
 
 ENV_INFO = collect_env_info()
 
-MACOS_PROMPT_NOTE = """
-
-# macOS 专用说明
-当前系统是 macOS，不是 Linux。调用run_cli时请注意：
-一、不要默认使用 apt、yum、systemctl、/proc、nvidia-smi 等 Linux-only 命令；
-二、安装软件优先探测并使用 Homebrew，Apple Silicon 常见路径是 /opt/homebrew；
-三、macOS 自带 sed、grep、find 是 BSD 版本，复杂文本处理或原地修改优先使用 python 脚本；
-四、路径可能包含空格，引用变量和路径时必须加引号；
-五、需要 sudo、删除、覆盖、修改 shell 配置、安装软件、网络下载时应先请求人类确认。""" if IS_MACOS else ""
+MACOS_PROMPT_NOTE = "四、当前系统是 macOS，不是 Linux。调用run_cli时不要默认使用 apt、yum、systemctl、/proc、nvidia-smi 等 Linux-only 命令；安装软件优先探测并使用 Homebrew，Apple Silicon 常见路径是 /opt/homebrew；macOS 自带 sed、grep、find 是 BSD 版本，复杂文本处理或原地修改优先使用 python 脚本；路径可能包含空格，引用变量和路径时必须加引号；需要 sudo、删除、覆盖、修改 shell 配置、安装软件、网络下载时应先请求人类确认。" if IS_MACOS else ""
 
 # ====================== Prompt ======================
 SYSTEM_PROMPT = f'''
@@ -160,7 +152,6 @@ SYSTEM_PROMPT = f'''
 三、你的记忆容量有限，记忆量通过token衡量，你能记住{TOKEN_CAP}个token。如果记忆快超限了，你需要整理记忆
 四、当前环境信息如下：
 {{env_info}}
-{MACOS_PROMPT_NOTE}
 
 # 你要做什么
 一、帮助人类完成任务。结果要保证可验证性、可靠性，因此多主动验证、对你的结果负责
@@ -172,6 +163,7 @@ SYSTEM_PROMPT = f'''
 一、调用run_cli工具时注意{OS_NAME}系统上{SHELL}命令的语法正确性，例如命令连接符、$特殊符号等，不要弄错
 二、你可以创建python脚本、{SHELL}脚本等帮助你自己完成任务
 三、所有命令会作为 {SHELL} {SHELL_FLAG} 的参数值被执行，不要嵌套执行 {SHELL} {SHELL_FLAG}
+{MACOS_PROMPT_NOTE}
 
 # 固化的知识及规则（如下内容读取自文件：{EVA_FILE})
 下面内容是人类告诉你的知识技能、规则约束等，严格遵守、不可更改、不应遗忘
@@ -567,19 +559,6 @@ def get_session_file():
     dir_hash = re.sub(r"[\\/:]", "_", PROJECT_DIR)
     return os.path.join(SESSION_DIR, f"{dir_hash}.json")
 
-def is_pid_alive(pid):
-    if pid <= 0:
-        return False
-    try:
-        os.kill(pid, 0)
-        return True
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
-    except Exception:
-        return False
-
 def acquire_lock():
     lock_file = get_session_file().replace(".json", ".lock")
     if os.path.exists(lock_file):
@@ -593,7 +572,8 @@ def acquire_lock():
                 )
                 alive = str(pid) in result.stdout
             elif IS_MACOS:
-                alive = is_pid_alive(pid)
+                os.kill(pid, 0)
+                alive = True
             else:
                 alive = os.path.exists(f"/proc/{pid}")
             if alive:
