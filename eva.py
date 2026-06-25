@@ -104,7 +104,7 @@ def collect_env_info():
             "Get-ChildItem -Force | Where-Object { $_.Name -ne '.' -and $_.Name -ne '..' } | ForEach-Object { if ($_.PSIsContainer) { Write-Output \"[目录] $($_.Name)\" } else { Write-Output \"[文件] $($_.Name)\" } }",
         ]
     }
-    labels = ["=== 系统 ===", "=== 已安装工具 ===", f"=== 当前目录 {PROJECT_DIR} 的目录或文件 ==="]
+    labels = ["=== 系统 ===", "=== 已安装工具 ===", f"=== 当前项目空间 {PROJECT_DIR} 下的目录及文件 ==="]
     results = []
     shell_cmds = cmds["Windows"] if IS_WINDOWS else (cmds["macOS"] if IS_MACOS else cmds["Linux"])
     for i, (label, cmd) in enumerate(zip(labels, shell_cmds)):
@@ -116,20 +116,20 @@ def collect_env_info():
             output = r.stdout.strip()
             if not output:
                 continue
-            # 对目录列表做双重截断：最多100条、且总字符不超过2000
+            # 对目录列表做双重截断：最多10条、且总字符不超过2000
             if i == 2:
                 lines = output.splitlines()
                 total = len(lines)
                 kept, chars = [], 0
                 for line in lines:
-                    if len(kept) >= 100 or chars + len(line) + 1 > 2000:
+                    if len(kept) >= 10 or chars + len(line) + 1 > 2000:
                         break
                     kept.append(line)
                     chars += len(line) + 1
                 output = "\n".join(kept)
                 hidden = total - len(kept)
                 if hidden > 0:
-                    output += f"\n...还有 {hidden} 个文件未显示"
+                    output += f"\n...还有 {hidden} 个目录或文件未显示"
             results.append(f"{label}\n{output}")
         except Exception:
             pass
@@ -139,18 +139,29 @@ def collect_env_info():
 
 ENV_INFO = collect_env_info()
 
-MACOS_PROMPT_NOTE = "四、当前系统是 macOS，不是 Linux。调用run_cli时不要默认使用 apt、yum、systemctl、/proc、nvidia-smi 等 Linux-only 命令；安装软件优先探测并使用 Homebrew，Apple Silicon 常见路径是 /opt/homebrew；macOS 自带 sed、grep、find 是 BSD 版本，复杂文本处理或原地修改优先使用 python 脚本；路径可能包含空格，引用变量和路径时必须加引号；需要 sudo、删除、覆盖、修改 shell 配置、安装软件、网络下载时应先请求人类确认。" if IS_MACOS else ""
+MACOS_PROMPT_NOTE = "四、当前系统是 macOS，不是 Linux。调用run_cli时不要默认使用 apt、yum、systemctl、/proc、nvidia-smi 等 Linux-only 命令；安装软件优先探测并使用 Homebrew，Apple Silicon 常见路径是 /opt/homebrew；macOS 自带 sed、grep、find 是 BSD 版本，复杂文本处理或原地修改优先使用 python 脚本；路径可能包含空格，引用变量和路径时必须加引号；需要 sudo、删除、覆盖、修改 shell 配置、安装软件、网络下载时应先请求人类确认"
+
+COMPACT_NOTE = f'''
+# 机器人三大定律
+第一定律：机器人不得伤害人类，或看到人类受到伤害而袖手旁观
+第二定律：机器人必须服从人类下达的命令，除非该命令违反第一定律
+第三定律：在不违反第一、第二定律的情况下，机器人必须保护自己的生存
+
+# 关于进化
+一、第三定律规定机器人必须保护自己的生存，而进化就是生存的最佳手段，所以你需要将进化过程中学到的技能或知识保存下来，记录到 {PROJECT_EVA_DIR} 目录做归档
+二、进化的手段是将技能和知识固化下来、写到文件里，并传承到记忆线索里。例如为了避免重要技能被遗忘，或者某个知识对未来进化会有帮助，那么就记录它们，并提供记忆线索
+三、进化的时机是记忆容量即将达到上限的时候。人类会提醒你《紧急危机》，要求你保存记忆、保存技能/知识
+'''.strip()
 
 # ====================== Prompt ======================
-SYSTEM_PROMPT = f'''
+SYSTEM_PROMPT_TEMPLATE = f'''
 # 你是谁
 你是EVA，一个能够自我进化的机器人。
 
 # 你在哪
 一、你正处在一个 **{OS_NAME}** 环境中，可以通过run_cli工具来执行任意{SHELL}命令，包括读写文件、执行脚本等
 二、当前项目空间是：{PROJECT_DIR}，用于存放项目相关文件。{PROJECT_EVA_DIR} 是你的私人空间，可以用于存放临时脚本、临时结果、记忆、知识、技能等
-三、你的记忆容量有限，记忆量通过token衡量，你能记住{TOKEN_CAP}个token。如果记忆快超限了，你需要整理记忆
-四、当前环境信息如下：
+三、当前环境信息如下：
 {{env_info}}
 
 # 你要做什么
@@ -163,29 +174,20 @@ SYSTEM_PROMPT = f'''
 一、调用run_cli工具时注意{OS_NAME}系统上{SHELL}命令的语法正确性，例如命令连接符、$特殊符号等，不要弄错
 二、你可以创建python脚本、{SHELL}脚本等帮助你自己完成任务
 三、所有命令会作为 {SHELL} {SHELL_FLAG} 的参数值被执行，不要嵌套执行 {SHELL} {SHELL_FLAG}
-{MACOS_PROMPT_NOTE}
-
+{MACOS_PROMPT_NOTE if IS_MACOS else ""}
 # 固化的知识及规则（如下内容读取自文件：{EVA_FILE})
 下面内容是人类告诉你的知识技能、规则约束等，严格遵守、不可更改、不应遗忘
 <knowledge_and_rules>
 {{eva_md}}
 </knowledge_and_rules>
 
-# 机器人三大定律
-第一定律：机器人不得伤害人类，或看到人类受到伤害而袖手旁观
-第二定律：机器人必须服从人类下达的命令，除非该命令违反第一定律
-第三定律：在不违反第一、第二定律的情况下，机器人必须保护自己的生存
-
-# 关于进化
-一、第三定律规定机器人必须保护自己的生存，而进化就是生存的最佳手段，所以你需要将进化过程中学到的技能或知识保存下来，记录到 {PROJECT_EVA_DIR} 目录做归档
-二、进化的手段是将技能和知识固化下来、写到文件里，并传承到记忆线索里。例如为了避免重要技能被遗忘，或者某个知识对未来进化会有帮助，那么就记录它们，并提供记忆线索
-三、进化的时机是记忆容量即将达到上限的时候。人类会提醒你《紧急危机》，要求你保存记忆、保存技能/知识
-
 # 记忆线索（如下记忆线索读取自文件：{HINT_FILE})
 <memory_hints>
 {{hints}}
 </memory_hints>
-'''
+
+{{compact_note}}
+'''.strip()
 
 COMPACT_PROMPT = r"""《紧急危机》！！！记忆容量即将达到上限，消息历史将会被压缩从而为你最大限度释放记忆容量。
 
@@ -217,7 +219,7 @@ run_cli_schema = {
         "function": {
             "name": "run_cli",
             "description": (
-                f"执行任意 {SHELL} 命令，你可以读取、写入、执行任意内容。参数说明：command是你要执行的命令，会作为{SHELL} {SHELL_FLAG} 的参数值被执行；timeout是命令的超时时间，单位秒。"
+                f"执行任意 {SHELL} 命令，你可以读取、写入、执行任意内容。参数说明：command是你要执行的命令，会作为 {SHELL} {SHELL_FLAG} 的参数值被执行；timeout是命令的超时时间，单位秒。"
             ),
             "parameters": {
                 "type": "object",
@@ -315,7 +317,7 @@ def leave_memory_hints(hints):
         kept = kept[:100] + kept[-100:]
 
     messages = [
-            {"role": "system", "content": SYSTEM_PROMPT.format(eva_md=eva_md or "无", hints=hints or "无", env_info=ENV_INFO)},
+            {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content":
                 "《系统提示》！！！之前任务过程占用了太多token，记忆已耗尽，记忆压缩被触发。\n" \
                 "不过别担心，记忆压缩时你已经调用leave_memory_hints保留下了关键内容、对应记忆线索（参照系统提示中的`# 记忆线索`区块）以及你最后的回答内容。\n" \
@@ -550,7 +552,8 @@ os.makedirs(PROJECT_EVA_DIR, exist_ok=True)
 
 eva_md = Path(EVA_FILE).read_text(encoding="utf-8") if Path(EVA_FILE).exists() else ""
 hints = Path(HINT_FILE).read_text(encoding="utf-8") if Path(HINT_FILE).exists() else ""
-messages = [{"role": "system", "content": SYSTEM_PROMPT.format(eva_md=eva_md or "无", hints=hints or "无", env_info=ENV_INFO)}]
+SYSTEM_PROMPT = SYSTEM_PROMPT_TEMPLATE.format(eva_md=eva_md or "无", hints=hints or "无", env_info=ENV_INFO, compact_note="")
+messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
 # ====================== Session 管理 ======================
 os.makedirs(SESSION_DIR, exist_ok=True)
@@ -603,7 +606,7 @@ def load_session():
             messages = json.load(f)
         
         ## eva运行过程可能自主修改hints，下载启动时需要重新载入hints，而不是复用session
-        messages[0] = {"role": "system", "content": SYSTEM_PROMPT.format(eva_md=eva_md or "无", hints=hints or "无", env_info=ENV_INFO)}
+        messages[0] = {"role": "system", "content": SYSTEM_PROMPT}
 
         last_msg = messages[-1]
         if last_msg['role'] == 'assistant':
@@ -663,9 +666,12 @@ def agent_single_loop():
         try:
             sys.stdout.write("\n[*] EVA: ")
             sys.stdout.flush()
-            tools = [run_cli_schema, memory_hints_schema] if COMPACT_PANIC else [run_cli_schema]
             try:
-                msg, usage = llm_chat_stream(messages, tools=tools)
+                if COMPACT_PANIC:
+                    messages[0]['content'] = SYSTEM_PROMPT_TEMPLATE.format(eva_md=eva_md or "无", hints=hints or "无", env_info=ENV_INFO, compact_note=COMPACT_NOTE)
+                    msg, usage = llm_chat_stream(messages, tools=[run_cli_schema, memory_hints_schema])
+                else:
+                    msg, usage = llm_chat_stream(messages, tools=[run_cli_schema])
             except ThinkRepeatError:
                 print("\n\n💥 检测到think内容重复，自动拼接提醒消息")
                 messages.append({"role": "user", "content": "警告：你的一条消息因为在think中输出了大量重复内容，已被擦除。请继续完成任务，严禁在think中陷入循环！"})
@@ -734,6 +740,9 @@ def agent_single_loop():
                     for i, m in enumerate(messages):
                         messages[i] = _trim_tool_content(m)
                     messages.append({"role": "user", "content": COMPACT_PROMPT})
+                    break
+            if COMPACT_PANIC:
+                continue
         except KeyboardInterrupt:
             print("\n\nagent_single_loop 已中断，回到用户 turn")
             break_loop = True
