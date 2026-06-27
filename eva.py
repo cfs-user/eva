@@ -264,28 +264,6 @@ elif sys.stdin.isatty():
     import readline
     readline.set_startup_hook()
 
-def _read_multiline_fallback(prompt_text=""):
-    try:
-        first_line = input(prompt_text)
-    except EOFError:
-        return ""
-
-    if first_line.endswith("\\"):
-        lines = [first_line[:-1]]
-        while True:
-            try:
-                line = input("... ")
-                if line.endswith("\\"):
-                    lines.append(line[:-1])
-                else:
-                    lines.append(line)
-                    break
-            except EOFError:
-                break
-        return "\n".join(lines)
-
-    return first_line
-
 def _ptk_multiline_prompt(prompt_text=""):
     kb = KeyBindings()
 
@@ -327,7 +305,6 @@ def read_input(prompt="", multiline=False):
                 return _ptk_multiline_prompt(prompt)
             except EOFError:
                 return ""
-        return _read_multiline_fallback(prompt)
 
     try:
         return input(prompt)
