@@ -293,18 +293,17 @@ def _ptk_multiline_prompt(prompt_text=""):
         key_bindings=kb,
     )
 
-def read_input(prompt="", multiline=False):
+def read_input(prompt=""):
     global PROMPT_TOOLKIT_HINT_SHOWN
 
-    if multiline:
-        if HAS_PROMPT_TOOLKIT and sys.stdin.isatty():
-            if not PROMPT_TOOLKIT_HINT_SHOWN:
-                print("\033[90m[提示: 检测到 prompt_toolkit，已开启多行输入。按 Enter 提交，按 Ctrl+N 换行；若终端支持，Alt+Enter 也可换行]\033[0m")
-                PROMPT_TOOLKIT_HINT_SHOWN = True
-            try:
-                return _ptk_multiline_prompt(prompt)
-            except EOFError:
-                return ""
+    if HAS_PROMPT_TOOLKIT and sys.stdin.isatty():
+        if not PROMPT_TOOLKIT_HINT_SHOWN:
+            print("\033[90m[提示: 检测到 prompt_toolkit，已开启多行输入。按 Enter 提交，按 Ctrl+N 换行；若终端支持，Alt+Enter 也可换行]\033[0m")
+            PROMPT_TOOLKIT_HINT_SHOWN = True
+        try:
+            return _ptk_multiline_prompt(prompt)
+        except EOFError:
+            return ""
 
     try:
         return input(prompt)
@@ -830,7 +829,7 @@ def human_loop(user_ask=None, save_after=False, until=""):
                 break
             
             print("")
-            user_input = read_input("[-] You: ", multiline=True).strip()
+            user_input = read_input("[-] You: ").strip()
             if not user_input:
                 continue
 
