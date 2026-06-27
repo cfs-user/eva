@@ -8,6 +8,15 @@ import urllib.error
 from pathlib import Path
 from datetime import date
 
+# 尝试导入 prompt_toolkit：有则启用丝滑多行输入，无则保持零依赖
+try:
+    from prompt_toolkit import prompt as ptk_prompt
+    from prompt_toolkit.key_binding import KeyBindings
+    from prompt_toolkit.keys import Keys
+    HAS_PROMPT_TOOLKIT = True
+except ImportError:
+    HAS_PROMPT_TOOLKIT = False
+
 _resolved = Path(__file__).resolve()
 this_file = str(_resolved)
 this_dir = _resolved.parent
@@ -76,6 +85,7 @@ TOOL_RESULT_LEN = min(8000, int(TOKEN_CAP / 20))
 ALLOW_ALL_CLI = False
 COMPACT_PANIC = False
 LAST_USAGE = None
+PROMPT_TOOLKIT_HINT_SHOWN = False
 
 EVA_HOME = os.environ.get("EVA_HOME") or os.path.join(this_dir, ".eva")
 EVA_FILE = os.path.join(EVA_HOME, "EVA.md")
@@ -254,7 +264,71 @@ elif sys.stdin.isatty():
     import readline
     readline.set_startup_hook()
 
-def read_input(prompt=""):
+def _read_multiline_fallback(prompt_text=""):
+    try:
+        first_line = input(prompt_text)
+    except EOFError:
+        return ""
+
+    if first_line.endswith("\\"):
+        lines = [first_line[:-1]]
+        while True:
+            try:
+                line = input("... ")
+                if line.endswith("\\"):
+                    lines.append(line[:-1])
+                else:
+                    lines.append(line)
+                    break
+            except EOFError:
+                break
+        return "\n".join(lines)
+
+    return first_line
+
+def _ptk_multiline_prompt(prompt_text=""):
+    kb = KeyBindings()
+
+    @kb.add("enter")
+    def _(event):
+        if event.key_processor.input_queue:
+            event.current_buffer.insert_text("\n")
+        else:
+            event.current_buffer.validate_and_handle()
+
+    @kb.add("c-n")
+    def _(event):
+        event.current_buffer.insert_text("\n")
+
+    @kb.add("escape", "enter")
+    def _(event):
+        event.current_buffer.insert_text("\n")
+
+    @kb.add(Keys.BracketedPaste)
+    def _(event):
+        data = event.data.replace("\r\n", "\n").replace("\r", "\n")
+        event.current_buffer.insert_text(data)
+
+    return ptk_prompt(
+        prompt_text,
+        multiline=True,
+        key_bindings=kb,
+    )
+
+def read_input(prompt="", multiline=False):
+    global PROMPT_TOOLKIT_HINT_SHOWN
+
+    if multiline:
+        if HAS_PROMPT_TOOLKIT and sys.stdin.isatty():
+            if not PROMPT_TOOLKIT_HINT_SHOWN:
+                print("\033[90m[提示: 检测到 prompt_toolkit，已开启多行输入。按 Enter 提交，按 Ctrl+N 换行；若终端支持，Alt+Enter 也可换行]\033[0m")
+                PROMPT_TOOLKIT_HINT_SHOWN = True
+            try:
+                return _ptk_multiline_prompt(prompt)
+            except EOFError:
+                return ""
+        return _read_multiline_fallback(prompt)
+
     try:
         return input(prompt)
     except EOFError:
@@ -779,7 +853,7 @@ def human_loop(user_ask=None, save_after=False, until=""):
                 break
             
             print("")
-            user_input = read_input("[-] You: ").strip()
+            user_input = read_input("[-] You: ", multiline=True).strip()
             if not user_input:
                 continue
 
