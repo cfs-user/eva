@@ -57,6 +57,10 @@ $env:EVA_API_KEY="sk-xxxxx"
 
 2. 运行`python3 eva.py`。首次运行会生成`eva`脚本，Linux 下执行`source ~/.bashrc`让脚本生效；macOS 下执行`source ~/.zshrc`让脚本生效。后续直接输入命令`eva`即可
 
+输入增强说明：
+
+- 如果环境里安装了`prompt_toolkit`，EVA会自动开启多行输入：`Enter`提交，`Ctrl+N`换行；如果终端支持，也可以用`Alt+Enter`换行
+
 macOS 分支说明：`eva-mac`分支保留原有单文件、命令行参数、Session、安全审查和工具调用行为，只增加 macOS 平台识别、zsh 启动脚本、macOS 环境探针、锁文件兼容和 macOS 命令提示，避免将 macOS 误判为 Linux。
 
 ```python
