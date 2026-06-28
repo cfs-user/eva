@@ -298,7 +298,7 @@ def read_input(prompt=""):
 
     if HAS_PROMPT_TOOLKIT and sys.stdin.isatty():
         if not PROMPT_TOOLKIT_HINT_SHOWN:
-            print("\033[90m[提示: 检测到 prompt_toolkit，已开启多行输入。按 Enter 提交，按 Ctrl+N 换行；若终端支持，Alt+Enter 也可换行]\033[0m")
+            print("\033[2m[提示: 检测到 prompt_toolkit，已开启多行输入。按 Enter 提交，按 Ctrl+N 换行；若终端支持，Alt+Enter 也可换行]\033[0m")
             PROMPT_TOOLKIT_HINT_SHOWN = True
         try:
             return _ptk_multiline_prompt(prompt)
