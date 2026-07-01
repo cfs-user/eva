@@ -38,11 +38,11 @@
     <rect x="112.75" y="64.75" width="1054.5" height="290.5" rx="27.25" stroke="#E2E8F0" stroke-width="1.5"/>
   </g>
 
-  <circle cx="203" cy="112" r="10" fill="#F97316" fill-opacity="0.18"/>
-  <circle cx="231" cy="112" r="10" fill="#FB7185" fill-opacity="0.2"/>
-  <circle cx="259" cy="112" r="10" fill="#60A5FA" fill-opacity="0.2"/>
+  <g transform="translate(-10 0)">
+    <circle cx="203" cy="112" r="10" fill="#F97316" fill-opacity="0.18"/>
+    <circle cx="231" cy="112" r="10" fill="#FB7185" fill-opacity="0.2"/>
+    <circle cx="259" cy="112" r="10" fill="#60A5FA" fill-opacity="0.2"/>
 
-  <g>
     <rect x="171" y="126" width="204" height="152" rx="24" fill="url(#terminal)"/>
     <rect x="188" y="144" width="170" height="114" rx="18" fill="url(#screen)"/>
     <path d="M214 182L233 201L214 220" stroke="#2563EB" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
@@ -54,21 +54,22 @@
     <rect x="310" y="306" width="22" height="18" rx="9" fill="#334155"/>
   </g>
 
-  <g>
+  <g transform="translate(-10 0)">
     <path d="M376 170C388 142 413 124 443 124C480 124 511 151 517 187C522 219 502 246 470 252C452 255 436 251 423 242C416 255 404 266 385 272" stroke="#FDBA74" stroke-width="10" stroke-linecap="round"/>
     <path d="M409 209C421 221 439 228 459 228C487 228 511 213 523 191" stroke="#FED7AA" stroke-width="10" stroke-linecap="round"/>
     <circle cx="438" cy="171" r="7" fill="#0F172A"/>
-    <circle cx="481" cy="165" r="9" fill="#0F172A"/>
+    <circle cx="481" cy="165" r="7" fill="#0F172A"/>
+    <circle cx="557" cy="126" r="20" fill="#FDE68A"/>
     <path d="M469 142L494 119" stroke="#FB7185" stroke-width="8" stroke-linecap="round"/>
     <circle cx="503" cy="110" r="20" fill="#FDE68A"/>
     <path d="M525 146L548 132" stroke="#F97316" stroke-width="8" stroke-linecap="round"/>
   </g>
 
   <g>
-    <text x="590" y="192" fill="#0F4C96" font-family="Georgia, 'Times New Roman', serif" font-size="94" font-weight="700">EVA</text>
-    <path d="M590 214H1036" stroke="#0F4C96" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
-    <text x="592" y="266" fill="#1D4F91" font-family="'Segoe UI', Arial, sans-serif" font-size="38" font-weight="700">Single-File Agent for Real Work</text>
-    <text x="490" y="314" fill="#475569" font-family="'Segoe UI', Arial, sans-serif" font-size="23" letter-spacing="-0.2">
+    <text x="580" y="192" fill="#0F4C96" font-family="Georgia, 'Times New Roman', serif" font-size="94" font-weight="700">EVA</text>
+    <path d="M580 214H1026" stroke="#0F4C96" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+    <text x="582" y="266" fill="#1D4F91" font-family="'Segoe UI', Arial, sans-serif" font-size="38" font-weight="700">Single-File Agent for Real Work</text>
+    <text x="480" y="314" fill="#475569" font-family="'Segoe UI', Arial, sans-serif" font-size="23" letter-spacing="-0.2">
       Local models · Safe command execution · Directory-scoped sessions
     </text>
   </g>
