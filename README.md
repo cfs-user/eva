@@ -1,6 +1,40 @@
-# EVA
+<p align="center">
+  <img src="./assets/readme-hero.svg" alt="EVA hero banner" width="100%" />
+</p>
 
-如果一个智能体的执行层小到只是一个脚本，那它具有病毒传播一样的潜力。
+<p align="center">
+  <strong>如果一个智能体的执行层小到只是一个脚本，那它具有病毒传播一样的潜力。</strong>
+</p>
+
+<p align="center">
+  EVA 是一个极致轻量、可接本地模型、带安全审查与目录级 Session 的单文件 Agent。
+</p>
+
+<p align="center">
+  <a href="https://github.com/usepr/eva/stargazers">
+    <img src="https://img.shields.io/github/stars/usepr/eva?style=flat-square" alt="GitHub stars" />
+  </a>
+  <a href="https://github.com/usepr/eva/forks">
+    <img src="https://img.shields.io/github/forks/usepr/eva?style=flat-square" alt="GitHub forks" />
+  </a>
+  <a href="https://github.com/usepr/eva/commits">
+    <img src="https://img.shields.io/github/last-commit/usepr/eva?style=flat-square" alt="Last commit" />
+  </a>
+  <a href="./LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square" alt="License" />
+  </a>
+  <img src="https://img.shields.io/badge/agent-single--file-1d4ed8?style=flat-square" alt="Single file agent" />
+  <img src="https://img.shields.io/badge/session-directory--scoped-f97316?style=flat-square" alt="Directory scoped sessions" />
+</p>
+
+<p align="center">
+  <a href="#快速开始"><strong>Quick Start</strong></a> ·
+  <a href="./showcase"><strong>Showcase</strong></a> ·
+  <a href="./showcase/wechat-bot/README.md"><strong>WeChat Bot</strong></a> ·
+  <a href="#关于-evamd"><strong>EVA.md</strong></a>
+</p>
+
+## 简介
 
 EVA是个麻雀虽小、五脏俱全的Agent智能体，相当于低配版Claude Code，能帮你写脚本、写测试案例、执行shell、分析数据等。我自己就是EVA的重度用户，日常使用频率非常高。
 
