@@ -20,9 +20,6 @@
   <a href="https://github.com/usepr/eva/commits">
     <img src="https://img.shields.io/github/last-commit/usepr/eva?style=flat-square" alt="Last commit" />
   </a>
-  <a href="https://github.com/usepr/eva/graphs/contributors">
-    <img src="https://img.shields.io/github/contributors/usepr/eva?style=flat-square" alt="Contributors" />
-  </a>
   <a href="./LICENSE">
     <img src="https://img.shields.io/badge/license-MIT-0f766e?style=flat-square" alt="License" />
   </a>
