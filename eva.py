@@ -821,6 +821,8 @@ def human_loop(user_ask=None, save_after=False, until=""):
                     msg = messages[-1]
                     if not until or (msg.get('role') == 'assistant' and until in msg.get('content', '')):
                         break
+                    if msg.get('role') == 'tool' and '用户中止该工具运行' in msg.get('content', ''):
+                        break
                     messages.append({"role": "user", "content": f"系统提醒！未检测到停止字符串：{until}，请继续完成任务"})
 
                 if save_after:
